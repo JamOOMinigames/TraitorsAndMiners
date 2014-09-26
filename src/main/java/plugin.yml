@@ -1,0 +1,10 @@
+name: Traitors and Miners
+version: 0.0.1
+description: A TTT clone created from scratch!
+main: mc.Mitchellbrine.traitorsAndMiners.TraitorsAndMiners
+commands:
+   startTAM:
+      description: Starts the game!
+      usage: /startTAM [player]
+      permission: TraitorsAndMiners.startTAM
+      permission-message: You don't have permission to perform this command, soory!
