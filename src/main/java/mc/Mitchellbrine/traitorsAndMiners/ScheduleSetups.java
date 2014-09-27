@@ -102,7 +102,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:09");
 				}
 			}
-		}, 1020L);
+		}, 420L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -111,7 +111,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:08");
 				}
 			}
-		}, 1040L);
+		}, 440L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -120,7 +120,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:07");
 				}
 			}
-		}, 1060L);
+		}, 460L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -129,7 +129,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:06");
 				}
 			}
-		}, 1080L);
+		}, 480L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -138,7 +138,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:05");
 				}
 			}
-		}, 1100L);
+		}, 500L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -147,7 +147,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:04");
 				}
 			}
-		}, 1120L);
+		}, 520L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -156,7 +156,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:03");
 				}
 			}
-		}, 1140L);
+		}, 540L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -165,7 +165,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:02");
 				}
 			}
-		}, 1160L);
+		}, 560L);
 		scheduler.scheduleSyncDelayedTask(plugin, new Runnable() {
 			@Override
 			public void run() {
@@ -174,7 +174,7 @@ public class ScheduleSetups {
 					player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:01");
 				}
 			}
-		}, 1180L);
+		}, 580L);
 	}
 	
 	public static void scheduleEndTime(final Plugin plugin, BukkitScheduler scheduler) {
