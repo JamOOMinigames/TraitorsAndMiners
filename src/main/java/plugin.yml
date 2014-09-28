@@ -8,3 +8,8 @@ commands:
       usage: /startTAM [player]
       permission: TraitorsAndMiners.startTAM
       permission-message: You don't have permission to perform this command, soory!
+   vote:
+      description: Vote to start the game!
+      usage: /vote
+      permission: TraitorsAndMiners.vote
+      permission-message: You don't have permission to perform this command, soory!
