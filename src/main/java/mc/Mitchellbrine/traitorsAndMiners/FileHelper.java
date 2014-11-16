@@ -1,10 +1,10 @@
 package mc.Mitchellbrine.traitorsAndMiners;
 
 import java.io.*;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.*;
+import java.util.zip.*;
 
+@SuppressWarnings("finally")
 public class FileHelper {
 
     public static void deleteDir(File dir) {

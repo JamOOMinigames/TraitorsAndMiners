@@ -1,15 +1,16 @@
-name: Traitors and Miners
+name: TraitorsAndMiners
 version: 0.0.1
-description: A TTT clone created from scratch!
+description: Looks like you're trying to write a description, would you like help?
 main: mc.Mitchellbrine.traitorsAndMiners.TraitorsAndMiners
+depend: [TitleManager]
 commands:
    startTAM:
       description: Starts the game!
-      usage: /startTAM [player]
-      permission: TraitorsAndMiners.startTAM
+      usage: /startTAM
+      permission: bukkit.command.op
       permission-message: You don't have permission to perform this command, soory!
-   vote:
-      description: Vote to start the game!
-      usage: /vote
-      permission: TraitorsAndMiners.vote
+   supply:
+      description: Supplies the players!
+      usage: /supply
+      permission: bukkit.command.op
       permission-message: You don't have permission to perform this command, soory!
