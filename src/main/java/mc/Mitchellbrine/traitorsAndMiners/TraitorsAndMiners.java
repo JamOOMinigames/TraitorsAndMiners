@@ -1,12 +1,13 @@
 package mc.Mitchellbrine.traitorsAndMiners;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import mc.Mitchellbrine.traitorsAndMiners.map.Map;
+import mc.Mitchellbrine.traitorsAndMiners.map.MapManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -39,9 +40,10 @@ import org.bukkit.scheduler.BukkitScheduler;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
+@SuppressWarnings("unused")
 public class TraitorsAndMiners extends JavaPlugin implements Listener {
 
-    Random randomW = new Random(System.currentTimeMillis());
+    public static Random randomW = new Random(System.currentTimeMillis());
     Random random;
 
     public int maxPlayers = 24;
@@ -64,51 +66,23 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 
     public static TraitorsAndMiners instance;
 
+
+
     @Override
     public void onLoad() {
-        FileHelper.deleteDir(new File(this.getServer().getWorldContainer(), "world"));
-        try {
-        	switch(randomW.nextInt(2)) {
-        	case 0: FileHelper.unzip(new File(this.getDataFolder(), "world_tam.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-			getLogger().info("Loaded world 1 (Mansion by MBrine)");
-			map = "Mansion by Mitchellbrine";
-        	break;
-        	case 1: if (new File(this.getDataFolder(),"world_tam1.zip").exists()) {
-        		FileHelper.unzip(new File(this.getDataFolder(), "world_tam1.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-    			getLogger().info("Loaded world 2 (Western Mines by MCG)");
-    			map = "Western Mines by MrComputerGhost";
-        	} else {
-    		FileHelper.unzip(new File(this.getDataFolder(), "world_tam.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-			getLogger().info("Loaded world 1 (Mansion by MBrine)");
-			map = "Mansion by Mitchellbrine";
-        	}
-    		break;
-        	case 2:
-        		if (new File(this.getDataFolder(),"world_tam2.zip").exists()) {
-        			FileHelper.unzip(new File(this.getDataFolder(), "world_tam2.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-        			getLogger().info("Loaded world 3 (Rainbow Road by kk)");
-        			map = "Rainbow Road by kkaylium";
-        		} else {
-             		FileHelper.unzip(new File(this.getDataFolder(), "world_tam.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-        			getLogger().info("Loaded world 1 (Mansion by MBrine)");
-        			map = "Mansion by Mitchellbrine";
-        		}
-        	break;
-        	default:
-        		FileHelper.unzip(new File(this.getDataFolder(), "world_tam.zip"), new File(this.getServer().getWorldContainer(), "world")); 
-    			getLogger().info("Loaded world 1 (Mansion by MBrine)");
-    			map = "Mansion by Mitchellbrine";
-        		break;
-        	}
-        } catch (Exception ex) {
-			getLogger().info("Someone derped!");
-            ex.printStackTrace();
-            getServer().shutdown();
-        }
+        instance = this;
+
+        // Map Loading Things
+
+        Map mansion = new Map("Mansion","Mitchellbrine","world_tam").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
+        Map mines = new Map("Western Mines","MCG","world_tam1").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
+
+        Map rainbow = new Map("Rainbow","kkaylium","world_rainbow").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
+
+        MapManager.resetMap();
     }
 
     public void onEnable() {
-        instance = this;
         getServer().getPluginManager().registerEvents(this, this);
         new TraitorWeapons(this);
         lobby = new Location(getServer().getWorld(getServer().getWorld("world").getUID()), 50, 66, 0);
