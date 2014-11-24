@@ -9,6 +9,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,6 +26,9 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+
 @SuppressWarnings("unused")
 public class TraitorWeapons implements Listener{
 	
@@ -38,21 +42,21 @@ public class TraitorWeapons implements Listener{
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled=true)
 	public void openInventory(PlayerInteractEvent event) {
         Action a = event.getAction();
         ItemStack is = event.getItem();
  
-        if(a == Action.PHYSICAL || is == null || is.getType() == Material.AIR)
+        if(a == Action.PHYSICAL)
             return;
-        if (is.getType()==Material.BOOK) {
+        if (is != null && is.getType() == Material.BOOK) {
             if (TraitorsAndMiners.instance.traitors.contains(event.getPlayer().getUniqueId())) {
             	openTraitorGUI(event.getPlayer());
             }
             if (TraitorsAndMiners.instance.detective.contains(event.getPlayer().getUniqueId())) {
             	openDetectiveGUI(event.getPlayer());
             }
-        } else if (is.getType() == Material.SHEARS) {
+        } else if (is != null && is.getType() == Material.SHEARS) {
         	if (event.getClickedBlock().getType() == Material.TNT) {
         		event.getClickedBlock().setType(Material.AIR);
 				for (UUID uuid : TraitorsAndMiners.instance.players) {
@@ -61,6 +65,20 @@ public class TraitorWeapons implements Listener{
 				}
         	}
         }
+        
+		if (event.getClickedBlock().getState() instanceof Sign) {
+            Sign sign = (Sign) event.getClickedBlock().getState();
+            if (!TraitorsAndMiners.instance.innocents.contains(event.getPlayer().getUniqueId()) && !TraitorsAndMiners.instance.traitors.contains(event.getPlayer().getUniqueId()) && !TraitorsAndMiners.instance.detective.contains(event.getPlayer().getUniqueId())) {
+                if (sign.getLine(0).contains("HUB")) {
+                    ByteArrayDataOutput out = ByteStreams.newDataOutput();
+                    out.writeUTF("Connect");
+                    out.writeUTF("lobby");
+                    event.getPlayer().sendPluginMessage(TraitorsAndMiners.instance, "BungeeCord", out.toByteArray());
+                }
+            } else {
+                event.setCancelled(true);
+            }
+		}
 	}
 	
 	@SuppressWarnings({"unchecked","rawtypes","deprecation"})
@@ -165,11 +183,25 @@ public class TraitorWeapons implements Listener{
 						}, 400L);
 						TraitorsAndMiners.instance.points.remove(player.getUniqueId());
 						TraitorsAndMiners.instance.points.put(player.getUniqueId(), newPoints);
+					} else {
+						player.sendMessage(ChatColor.RED + "Not enough coins!");
+					}
+					break;
+				case GOLDEN_APPLE:
+					if (TraitorsAndMiners.instance.points.get(player.getUniqueId()) >= 4) {
+						int newPoints = TraitorsAndMiners.instance.points.get(player.getUniqueId()) - 4;
+						player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,400,4));
+						player.sendMessage(ChatColor.DARK_RED + "You have 20 seconds of increased health!");
+						TraitorsAndMiners.instance.points.remove(player.getUniqueId());
+						TraitorsAndMiners.instance.points.put(player.getUniqueId(), newPoints);
+					} else {
+						player.sendMessage(ChatColor.RED + "Not enough coins!");
 					}
 					break;
 					default:
 						player.closeInventory();
 						break;
+
 					
 				}
 				event.setCurrentItem(null);
@@ -239,7 +271,7 @@ public class TraitorWeapons implements Listener{
 							player.sendMessage(ChatColor.RED + "Not enough coins!");
 						}
 						break;
-					case NETHER_BRICK_ITEM:
+					/* case NETHER_BRICK_ITEM:
 						if (TraitorsAndMiners.instance.points.get(player.getUniqueId()) >= 5) {
 							int newPoints = TraitorsAndMiners.instance.points.get(player.getUniqueId()) - 5;
 							Inventory teleportInv = Bukkit.createInventory(null, 27, teleportName);
@@ -267,7 +299,7 @@ public class TraitorWeapons implements Listener{
 						} else {
 							player.sendMessage(ChatColor.RED + "Not enough coins!");
 						}
-						break;
+						break; */
 					case BOW:
 						if (TraitorsAndMiners.instance.points.get(player.getUniqueId()) >= 6) {
 							int newPoints = TraitorsAndMiners.instance.points.get(player.getUniqueId()) - 6;
@@ -408,7 +440,21 @@ public class TraitorWeapons implements Listener{
 		meta3.setLore(lore3);
 		stack3.setItemMeta(meta3);
 		traitorInv.setItem(3, stack3);
-		
+
+		ItemStack stack4 = new ItemStack(Material.GOLDEN_APPLE,4);
+		ItemMeta meta4 = stack4.getItemMeta();
+		meta4.setDisplayName(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "Half" + ChatColor.RESET + " " + ChatColor.GOLD + "Full-Life");
+		List lore4 = meta4.getLore();
+		if (lore4 == null) {
+			lore4 = new ArrayList();
+		}
+		lore4.add(ChatColor.RED + "Gives you another set of hearts for 20 seconds");
+		lore4.add("");
+		lore4.add(ChatColor.GOLD + "Traitor Points: 4");
+		meta4.setLore(lore4);
+		stack4.setItemMeta(meta4);
+		traitorInv.setItem(4,stack4);
+
 		// End Item
 		ItemStack stack9 = new ItemStack(Material.EYE_OF_ENDER);
 		ItemMeta meta9 = stack9.getItemMeta();
@@ -453,7 +499,7 @@ public class TraitorWeapons implements Listener{
 		stack1.setItemMeta(meta1);
 		detectiveInv.setItem(1, stack1);
 		
-		ItemStack stack2 = new ItemStack(Material.NETHER_BRICK_ITEM,5);
+		/*ItemStack stack2 = new ItemStack(Material.NETHER_BRICK_ITEM,5);
 		ItemMeta meta2 = stack2.getItemMeta();
 		meta2.setDisplayName(ChatColor.LIGHT_PURPLE + "Request Teleport");
 		List lore2 = meta2.getLore();
@@ -467,7 +513,9 @@ public class TraitorWeapons implements Listener{
 		meta2.setLore(lore2);
 		stack2.setItemMeta(meta2);
 		detectiveInv.setItem(2, stack2);
-		
+
+		*/
+
 		ItemStack stack3 = new ItemStack(Material.BOW,6);
 		stack3.addEnchantment(Enchantment.ARROW_DAMAGE, 10);
 		ItemMeta meta3 = stack3.getItemMeta();
@@ -481,7 +529,7 @@ public class TraitorWeapons implements Listener{
 		lore3.add(ChatColor.GOLD + "Points: 6");
 		meta3.setLore(lore3);
 		stack3.setItemMeta(meta3);
-		detectiveInv.setItem(3, stack3);
+		detectiveInv.setItem(2, stack3);
 		
 		// End Item
 		ItemStack stack9 = new ItemStack(Material.EYE_OF_ENDER);

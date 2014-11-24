@@ -14,3 +14,8 @@ commands:
       usage: /supply
       permission: bukkit.command.op
       permission-message: You don't have permission to perform this command, soory!
+   vote:
+      description: Votes on next map!
+      usage: /vote [map number]
+      permission: bukkit.command.help
+      permission-message: You don't have permission to perform this command, soory!

@@ -8,39 +8,48 @@ import java.util.UUID;
 
 import mc.Mitchellbrine.traitorsAndMiners.map.Map;
 import mc.Mitchellbrine.traitorsAndMiners.map.MapManager;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Bat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import org.bukkit.util.Vector;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused","deprecation"})
 public class TraitorsAndMiners extends JavaPlugin implements Listener {
 
     public static Random randomW = new Random(System.currentTimeMillis());
@@ -66,7 +75,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 
     public static TraitorsAndMiners instance;
 
-
+    public Map tamMap;
 
     @Override
     public void onLoad() {
@@ -74,10 +83,19 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 
         // Map Loading Things
 
-        Map mansion = new Map("Mansion","Mitchellbrine","world_tam").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
-        Map mines = new Map("Western Mines","MCG","world_tam1").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
+        tamMap = new Map("Western Mines","MCG","world_tam1",new Location(getServer().getWorld("world"),50,65, 0),new Location(getServer().getWorld("world"),0,65,0)).setMaxPlayers(24);
+        
+        Map mansion = new Map("Mansion","Mitchellbrine","world_tam",new Location(getServer().getWorld("world"),50,65, 0),new Location(getServer().getWorld("world"),0,65,0)).setMaxPlayers(24);
+        Map mines = new Map("Western Mines","MCG","world_tam1",new Location(getServer().getWorld("world"),50,65, 0),new Location(getServer().getWorld("world"),0,65,0)).setMaxPlayers(24);
+        
+        Map rainbow = new Map("Rainbow","kkaylium","world_rainbow",new Location(getServer().getWorld("world"),50,65, 0),new Location(getServer().getWorld("world"),0,65,0)).setMaxPlayers(24);
 
-        Map rainbow = new Map("Rainbow","kkaylium","world_rainbow").setLobby(new Location(getServer().getWorld("world"),50,65, 0)).setSpawn(new Location(getServer().getWorld("world"),0,65,0));
+        Map ruins = new Map("Ruins","TeamDoorknob","world_ruins",new Location(getServer().getWorld("world"),50,65,0),new Location(getServer().getWorld("world"),0,65,0)).setMaxPlayers(24);
+        
+        MapManager.registerMap(mansion);
+        MapManager.registerMap(mines);
+        MapManager.registerMap(rainbow);
+        //MapManager.registerMap(ruins);
 
         MapManager.resetMap();
     }
@@ -85,29 +103,51 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
         new TraitorWeapons(this);
-        lobby = new Location(getServer().getWorld(getServer().getWorld("world").getUID()), 50, 66, 0);
-        spawn = new Location(getServer().getWorld(getServer().getWorld("world").getUID()), 0, 65, 0);
         gameState = 0;
         random = MathHelper.random(getServer().getWorld("world").getTime());
         Bukkit.getMessenger().registerOutgoingPluginChannel(TraitorsAndMiners.instance, "BungeeCord");
+        
+        spawn = tamMap.getSpawn();
+
+            if (spawn == null) {
+        	    spawn = new Location(getServer().getWorld("world"),0,65,0);
+            }
+        
+        lobby = tamMap.getLobby();
+
+            if (lobby == null) {
+        	    lobby = new Location(getServer().getWorld("world"),50,65,0);
+            }
+        
+		lobby = new Location(getServer().getWorld("world"),50,65,0);
+	
+        spawn = new Location(getServer().getWorld("world"),0,65,0);
+        ItemStackHelper.init();
+
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule doFireTick false");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule doMobLoot false");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule mobGriefing false");
+
     }
 
-    @SuppressWarnings("unused")
     @EventHandler
     public void deathOfAPlayerman(PlayerDeathEvent event) {
     	Player player = event.getEntity();
         	if (gameState == 2) {
     		if (players.contains(player.getUniqueId())) {
             event.setDeathMessage("");
+            event.getDrops().clear();
             player.setGameMode(GameMode.ADVENTURE);
             player.setCanPickupItems(false);
             player.setAllowFlight(true);
+            player.setNoDamageTicks(100000);
             player.setMaximumNoDamageTicks(10000);
             player.setHealth(20.0D);
             player.getInventory().clear();
             player.sendMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "YOU DIED!");
             player.sendMessage(ChatColor.LIGHT_PURPLE + "Spectate to see who wins!");
             TitleManager.sendHeaderAndFooter(event.getEntity(), ChatColor.DARK_RED + "TAM - " + ChatColor.AQUA + " In-Game", ChatColor.LIGHT_PURPLE + "You are " + ChatColor.BOLD + "DEAD");
+    		player.setDisplayName(ChatColor.DARK_RED + "*DEAD* " + ChatColor.RESET +  player.getName());
             for (UUID uuidI : innocents) {
                 getServer().getPlayer(uuidI).hidePlayer(player);
             }
@@ -127,11 +167,11 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
             }
                             
                 if (innocents.contains(player.getUniqueId())) {
-                	ItemStack stack = new ItemStack(Material.SKULL_ITEM,1);
-                	stack.setDurability((short) 3);
-                	ItemMeta meta = stack.getItemMeta();
-                	meta.setDisplayName(ChatColor.GREEN + player.getName());
-                	stack.setItemMeta(meta);
+                	ItemStack stack = new ItemStack(Material.SKULL_ITEM,1,(short) 3);
+                    SkullMeta meta1 = (SkullMeta) stack.getItemMeta();
+                	meta1.setDisplayName(ChatColor.GREEN + player.getName());
+                    meta1.setOwner(player.getName());
+                    stack.setItemMeta(meta1);
                 	if (!detective.isEmpty()) {
                     for (UUID uuid : detective) {
                     	getServer().getPlayer(uuid).getInventory().addItem(stack);
@@ -142,9 +182,36 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
                     	getServer().getPlayer(uuid).getInventory().addItem(stack);
                     }
                     }
+                    if (!traitors.isEmpty()) {
+                        for (UUID uuid : traitors) {
+                            getServer().getPlayer(uuid).getInventory().addItem(stack);
+                        }
+                    }
                     innocents.remove(player.getUniqueId());
                 }
                 else if (traitors.contains(player.getUniqueId())) {
+                    ItemStack stack = new ItemStack(Material.SKULL_ITEM,1,(short) 3);
+                    SkullMeta meta1 = (SkullMeta) stack.getItemMeta();
+                    meta1.setDisplayName(ChatColor.DARK_RED + player.getName());
+                    meta1.setOwner(player.getName());
+                    stack.setItemMeta(meta1);
+                    if (!detective.isEmpty()) {
+                        for (UUID uuid : detective) {
+                            getServer().getPlayer(uuid).getInventory().addItem(stack);
+                        }
+                    }
+                    if (!innocents.isEmpty()) {
+                        for (UUID uuid : innocents) {
+                            getServer().getPlayer(uuid).getInventory().addItem(stack);
+                        }
+                    }
+                    if (!traitors.isEmpty()) {
+                        for (UUID uuid : traitors) {
+                            getServer().getPlayer(uuid).getInventory().addItem(stack);
+                            player.getWorld().playSound(player.getLocation(),Sound.BLAZE_HIT,1, 0);
+                            TitleManager.sendFloatingText(player, ChatColor.DARK_RED + "Your ally has fallen:", player.getName(), 0, 40, 20);
+                        }
+                    }
                     traitors.remove(player.getUniqueId());
                 } else if (detective.contains(player.getUniqueId())) {
                     detective.remove(player.getUniqueId());
@@ -156,7 +223,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
             } else if (innocents.isEmpty() && detective.isEmpty()) {
                 endGame("traitors");
             }
-        }
+            }
         	}
         }
     }
@@ -165,7 +232,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     @EventHandler
     public void playerDeath(EntityDamageEvent event) {
     	if (gameState == 2) {
-        if (event.getEntity() instanceof Player && event.getCause() == DamageCause.PROJECTILE) {
+        if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
             if (event.getDamage() > player.getHealth()) {
             	if (players.contains(player.getUniqueId())) {
@@ -173,12 +240,15 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setCanPickupItems(false);
                 player.setAllowFlight(true);
+                player.setNoDamageTicks(100000);
                 player.setMaximumNoDamageTicks(10000);
                 player.setHealth(20.0D);
                 player.getInventory().clear();
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "YOU DIED!");
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "Spectate to see who wins!");
                 TitleManager.sendHeaderAndFooter(player, ChatColor.DARK_RED + "TAM - " + ChatColor.AQUA + " In-Game", ChatColor.LIGHT_PURPLE + "You are " + ChatColor.BOLD + "DEAD");
+        		player.setDisplayName(ChatColor.DARK_RED + "*DEAD* " + ChatColor.RESET +  player.getName());
+
                 for (UUID uuidI : innocents) {
                     getServer().getPlayer(uuidI).hidePlayer(player);
                 }
@@ -252,23 +322,52 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     }
 
     @SuppressWarnings("unused")
-    @EventHandler
-    public void entityDamage(EntityDamageByEntityEvent event) {
-        Entity damager = event.getDamager();
+	@EventHandler
+	public void entityDamage(EntityDamageByEntityEvent event) {
+	    Entity damager = event.getDamager();
+	
+	    if (damager instanceof Player) {
+            Player player = (Player) damager;
+	        if (event.getEntity() instanceof Player) {
+	            Player entity = (Player) event.getEntity();
+	            if (!innocents.contains(player.getUniqueId()) && !traitors.contains(player.getUniqueId()) && !detective.contains(player.getUniqueId())) {
+	                event.setCancelled(true);
+	            }
+	            if (!innocents.contains(entity.getUniqueId()) && !traitors.contains(entity.getUniqueId()) && !detective.contains(entity.getUniqueId())) {
+	            	event.setCancelled(true);
+	            }
+                if (gameState == 2) {
+                    if (event.getDamage() > entity.getHealth()) {
+                        if (detective.contains(entity.getUniqueId())) {
+                            for (UUID uuid : players) {
+                                getServer().getPlayer(uuid).sendMessage(ChatColor.DARK_BLUE + entity.getDisplayName() + ChatColor.RED + " was killed by " + ChatColor.BOLD + player.getName() + ChatColor.RESET + "" + ChatColor.RED + "! Much suspicion, very wow!");
+                            }
+                        }
+                    }
+                }
+            } else if (event.getEntity() instanceof Bat) {
+	        	if (gameState >= 2) {
+                    if (event.getDamage() > ((Bat) event.getEntity()).getHealth()) {
+                        if (traitors.contains(player.getUniqueId()) || detective.contains(player.getUniqueId())) {
+                            int newPoints = points.get(player.getUniqueId()) + 2;
+                            points.remove(player.getUniqueId());
+                            points.put(player.getUniqueId(), newPoints);
+                        }
+                    }
+	        	} else {
+	        		event.setCancelled(true);
+	        	}
+	        }
+	    }
 
-        if (damager instanceof Player) {
-            if (event.getEntity() instanceof Player) {
-                Player player = (Player) damager;
-                Player entity = (Player) event.getEntity();
-                if (!innocents.contains(player.getUniqueId()) && !traitors.contains(player.getUniqueId()) && !detective.contains(player.getUniqueId())) {
-                    event.setCancelled(true);
-                }
-                if (!innocents.contains(entity.getUniqueId()) && !traitors.contains(entity.getUniqueId()) && !detective.contains(entity.getUniqueId())) {
-                	event.setCancelled(true);
-                }
+        if (event.getEntity() instanceof Player) {
+            Player entity = (Player) event.getEntity();
+            if (!innocents.contains(entity.getUniqueId()) && !traitors.contains(entity.getUniqueId()) && !detective.contains(entity.getUniqueId())) {
+                event.setCancelled(true);
             }
         }
-    }
+
+	}
 
     public int safeRandom(int maxSize) {
         int newInt;
@@ -286,13 +385,16 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     	thread.start();
     	
         for (UUID uuid : players) {
-        	if (getServer().getPlayer(uuid).isInsideVehicle()) {
-        		getServer().getPlayer(uuid).eject();
-        	}
         	TitleManager.sendHeader(getServer().getPlayer(uuid), ChatColor.DARK_RED + "TAM - " + ChatColor.AQUA + "PRE-GAME");
-            getServer().getPlayer(uuid).teleport(spawn);
+            if (spawn == null) {
+            	spawn = new Location(getServer().getWorld("world"),0,65,0);
+            }
+        	getServer().getPlayer(uuid).teleport(spawn);
             getServer().getPlayer(uuid).getInventory().clear();
             getServer().getPlayer(uuid).setGameMode(GameMode.ADVENTURE);
+            for (UUID uuid1 : players) {
+                getServer().getPlayer(uuid).hidePlayer(getServer().getPlayer(uuid1));
+            }
             getServer().getPlayer(uuid).sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Round starting in 0:30");
             gameState = 1;
         }
@@ -392,6 +494,11 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
                 	}
                 }, 0L, 1200L);
                 gameState = 2;
+                for (UUID uuid : players) {
+                    for (UUID uuid1 : players) {
+                        getServer().getPlayer(uuid).showPlayer(getServer().getPlayer(uuid1));
+                    }
+                }
             }
         }, 600L);
         
@@ -468,6 +575,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     public void endGame(String whoWon) {
         if (whoWon.equalsIgnoreCase("innocents")) {
             for (UUID uuid : players) {
+            	TitleManager.sendFloatingText(getServer().getPlayer(uuid), ChatColor.GREEN + "The " + ChatColor.BOLD + "INNOCENTS" + ChatColor.RESET + "" + ChatColor.GREEN + " won!", "", 0, 200, 0);
                 getServer().getPlayer(uuid).sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "The INNOCENT won!");
                 getServer().getPlayer(uuid).sendMessage(ChatColor.GREEN + "" + ChatColor.ITALIC + "The remaining innocents were: ");
                 for (UUID uuidI : innocents) {
@@ -481,6 +589,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
             }
         } else if (whoWon.equalsIgnoreCase("traitors")) {
             for (UUID uuid : players) {
+            	TitleManager.sendFloatingText(getServer().getPlayer(uuid), ChatColor.DARK_RED + "The " + ChatColor.BOLD + "TRAITORS" + ChatColor.RESET + "" + ChatColor.DARK_RED + " won!", "", 0, 200, 0);
                 getServer().getPlayer(uuid).sendMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD + "The TRAITORS won!");
                 getServer().getPlayer(uuid).sendMessage(ChatColor.DARK_RED + "" + ChatColor.ITALIC + "The remaining traitors were: ");
                 for (UUID uuidT : traitors) {
@@ -496,12 +605,24 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
         for (UUID uuid : players) {
             getServer().getPlayer(uuid).sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Server restarting in 30 seconds!");
 
+            getServer().getPlayer(uuid).sendMessage(ChatColor.GOLD + "What map should be next?");
+            getServer().getPlayer(uuid).sendMessage(ChatColor.GOLD + "- - -");
+            for (Map map : MapManager.maps) {
+                getServer().getPlayer(uuid).sendMessage(ChatColor.GOLD + "" + (MapManager.maps.indexOf(map) + 1) + ". " + map.getMapName() + " by " + map.getMapAuthor());
+            }
+            getServer().getPlayer(uuid).sendMessage(ChatColor.GOLD + "- - -");
+
             getServer().getPlayer(uuid).setBedSpawnLocation(lobby, true);
             getServer().getPlayer(uuid).setGameMode(GameMode.ADVENTURE);
             getServer().getPlayer(uuid).setCanPickupItems(false);
             getServer().getPlayer(uuid).setAllowFlight(true);
             getServer().getPlayer(uuid).getInventory().clear();
+            getServer().getPlayer(uuid).setNoDamageTicks(100000);
             getServer().getPlayer(uuid).setMaximumNoDamageTicks(10000);
+            
+        	String newName = getServer().getPlayer(uuid).getDisplayName().replaceAll(ChatColor.DARK_RED + "*DEAD* ", "");
+        	getServer().getPlayer(uuid).setDisplayName(newName);
+        	
             for (UUID uuid2 : players) {
             	getServer().getPlayer(uuid).showPlayer(getServer().getPlayer(uuid2));
             }
@@ -576,6 +697,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
         		for (Player player : getServer().getWorld("world").getPlayers()) {
                     player.sendPluginMessage(TraitorsAndMiners.instance, "BungeeCord", out.toByteArray());
         		}
+        		MapManager.recordVote();
         	}
         }, 595L);
 
@@ -586,6 +708,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (cmd.getName().equalsIgnoreCase("startTAM")) {
+        	if (gameState == 0) {
         	if (getServer().getWorld("world").getPlayers().size() >= 3) {
             for (Player player : getServer().getWorld("world").getPlayers()) {
                 player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Game beginning in 10 seconds...");
@@ -606,39 +729,30 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
         		sender.sendMessage(ChatColor.RED + "There are not enough players to start!");
         	}
             return true;
+        	}
         }
         if (cmd.getName().equalsIgnoreCase("vote")) {
         	if (sender instanceof Player) {
         	Player player = (Player) sender;
-        	if (!voteStart.contains(player.getUniqueId())) {
-        	voteStart.add(player.getUniqueId());
-        	player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "You have voted to start the game!");
-        	} else {
-        	voteStart.remove(player.getUniqueId());
-            player.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "You have removed your vote to start the game!");
-        	}
-        	if (getServer().getWorld("world").getPlayers().size() >= 3) {
-        	if (voteStart.size() > getServer().getWorld("world").getPlayers().size() / 2) {
-        		for (UUID uuid : voteStart) {
-        			voteStart.remove(uuid);
-        		}
-        		for (Player players : getServer().getWorld("world").getPlayers()) {
-        			players.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "The vote to start the game has passed!");
-                    this.players.add(player.getUniqueId());
-                    players.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Game beginning in 10 seconds...");
-        		}
-
-                BukkitScheduler scheduler = Bukkit.getServer().getScheduler();
-                scheduler.scheduleSyncDelayedTask(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        startGame();
+            if (args.length == 1) {
+                try {
+                    int mapNumber = Integer.parseInt(args[0]);
+                    if (MapManager.maps.get(mapNumber - 1) != null) {
+                        int amountOfVotes;
+                        if (MapManager.votes.get(MapManager.maps.get(mapNumber - 1)) == null) {
+                            amountOfVotes = 1;
+                        } else {
+                            amountOfVotes = MapManager.votes.get(MapManager.maps.get(mapNumber - 1)) + 1;
+                            MapManager.votes.remove(MapManager.maps.get(mapNumber - 1));
+                        }
+                        MapManager.votes.put(MapManager.maps.get(mapNumber - 1),amountOfVotes);
+                        player.sendMessage(ChatColor.GOLD + "You voted for: " + MapManager.maps.get(mapNumber - 1).getMapName() + " by " + MapManager.maps.get(mapNumber - 1).getMapAuthor());
+                        return true;
                     }
-                }, 200L);
-                ScheduleSetups.scheduleStartTime(this, scheduler);
-        	}
-        	}
-        	return true;
+                } catch (Exception ex) {
+                    return false;
+                }
+            }
         	}
         }
         if (cmd.getName().equalsIgnoreCase("supply")) {
@@ -685,7 +799,11 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     public void joinHandler(PlayerJoinEvent event) {
     	if (((CraftPlayer) event.getPlayer()).getHandle().playerConnection.networkManager.getVersion() == 47) {
     	if (gameState == 0) {
-    	event.getPlayer().teleport(lobby);
+    	
+    		if (lobby == null) {
+    			lobby = new Location(getServer().getWorld("world"),50,65,0);
+    		}
+    		event.getPlayer().teleport(lobby);
     	event.setJoinMessage(ChatColor.DARK_GRAY + "" + ChatColor.ITALIC + event.getPlayer().getName() + " has joined (" + (getServer().getWorld("world").getPlayers().size() + 1) + "/" + getServer().getMaxPlayers() + ")");
     	
     	final Player playerF = event.getPlayer();
@@ -725,7 +843,8 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
             event.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "YOU ARE SPECTATING!");
             event.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Spectate to see who wins!");
             TitleManager.sendHeaderAndFooter(event.getPlayer(), ChatColor.DARK_RED + "TAM - " + ChatColor.AQUA + " In-Game", ChatColor.LIGHT_PURPLE + "You are " + ChatColor.BOLD + "SPECTATING");
-    		
+    		event.getPlayer().setDisplayName(ChatColor.DARK_RED + "*DEAD* " + ChatColor.RESET +  event.getPlayer().getName());
+            
     		for (UUID uuid : players) {
     			getServer().getPlayer(uuid).hidePlayer(event.getPlayer());
     		}
@@ -775,12 +894,45 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 		public void run() {
 
 			ItemStack bow = new ItemStack(Material.BOW);
+            bow.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE,2);
 			bow.addEnchantment(Enchantment.ARROW_INFINITE, 1);
-			ItemStack arrow = new ItemStack(Material.ARROW);
+
+            ItemStackHelper.setItemName(bow,"Pistol");
+
+            ItemStack arrow = new ItemStack(Material.ARROW);
 			
 			ItemStack sword = new ItemStack(Material.STONE_SWORD);
-			
-			
+
+            ItemStack woodSword = new ItemStack(Material.WOOD_SWORD);
+
+            ItemStack fishing = new ItemStack(Material.FISHING_ROD);
+
+            fishing.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 2);
+            fishing.addUnsafeEnchantment(Enchantment.KNOCKBACK,4);
+
+            ItemStack flint = new ItemStack(Material.FLINT_AND_STEEL,1,(short)random.nextInt(65));
+
+            flint.addUnsafeEnchantment(Enchantment.FIRE_ASPECT,1);
+
+            ItemStack desertEagle = new ItemStack(Material.BOW);
+            desertEagle.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE,5);
+            desertEagle.addUnsafeEnchantment(Enchantment.ARROW_INFINITE,1);
+
+            ItemStackHelper.setItemName(desertEagle,"Deagle");
+
+            ItemStack huge = new ItemStack(Material.BOW);
+            huge.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE,1);
+            huge.addUnsafeEnchantment(Enchantment.ARROW_INFINITE,1);
+
+            ItemStackHelper.setItemName(huge,"H.U.G.E. 249");
+
+            ItemStack glock = new ItemStack(Material.BOW);
+            glock.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE,2);
+            glock.addUnsafeEnchantment(Enchantment.ARROW_KNOCKBACK,2);
+            glock.addUnsafeEnchantment(Enchantment.ARROW_INFINITE,1);
+
+            ItemStackHelper.setItemName(glock,"Glock");
+
 	    		for (int x = -100; x < 100;x++) {
 	    			for (int y = 0; y < 255; y++) {
 	    				for (int z = -100; z < 100;z++) {
@@ -789,13 +941,26 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 	    							Chest chest = (Chest) getServer().getWorld("world").getBlockAt(blockLoc).getState();
 	    							Inventory inventory = chest.getInventory();
 	    							inventory.clear();
-	    							switch(random.nextInt(4)) {
-	    							case 0: inventory.addItem(bow,arrow); break;
-	    							case 1: inventory.addItem(sword); break;
-	    							case 2: inventory.addItem(bow,arrow); break;
-	    							case 3: inventory.addItem(sword); break;
-	    							default: inventory.addItem(sword); break;
+                                    ItemStack stack;
+	    							switch(random.nextInt(7)) {
+	    							    case 0: stack = bow; break;
+	    							    case 1: stack = sword; break;
+	    							    case 2: stack = woodSword; break;
+	    							    case 3: stack = fishing; break;
+                                        case 4: stack = flint; break;
+                                        case 5: stack = desertEagle; break;
+                                        case 6: stack = huge; break;
+                                        case 7: stack = glock; break;
+	    							    default: stack = sword; break;
 	    							}
+                                    if (stack.getType() != Material.BOW && stack.getType() != Material.FLINT_AND_STEEL) {
+                                        ItemStackHelper.setItemName(stack);
+                                    }
+                                    ItemStackHelper.setInRandomSlot(inventory,stack);
+                                    if (stack.getType() == Material.BOW) {
+                                        inventory.setItem(ItemStackHelper.getSlotOfMaterial(inventory,Material.BOW) + 1,arrow);
+                                        //inventory.addItem(arrow);
+                                    }
 	    					}
 	    				}
 	    			}
@@ -803,5 +968,59 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
 		}
     	
     }
+
+    @EventHandler
+    public void gameCheck(PlayerGameModeChangeEvent event) {
+        if (gameState != 2) return;
+
+        Player player = event.getPlayer();
+
+        if (!innocents.contains(player.getUniqueId()) && !traitors.contains(player.getUniqueId()) && !detective.contains(player.getUniqueId())) {
+            event.setCancelled(true);
+        }
+
+    }
+    
+
+	  @EventHandler(priority = EventPriority.HIGHEST)
+	  public void signChange(SignChangeEvent event) {
+		  if (event.getLine(0).equalsIgnoreCase("HUB")) {
+              if (event.getPlayer().isOp()) {
+                  event.setLine(0, ChatColor.GREEN + "[HUB]");
+                  event.setLine(1, "Return to lobby");
+              }
+          }
+	  }
+
+    @EventHandler
+    public void onPlayerHurtPlayer(EntityDamageByEntityEvent event) {
+        Entity entityDamager = event.getDamager();
+        Entity entityDamaged = event.getEntity();
+
+        if (entityDamager instanceof Arrow) {
+            if (entityDamaged instanceof Player && ((Arrow) entityDamager).getShooter() instanceof Player) {
+                Arrow arrow = (Arrow) entityDamager;
+
+                Vector velocity = arrow.getVelocity();
+
+                Player shooter = (Player) arrow.getShooter();
+                Player damaged = (Player) entityDamaged;
+
+                if (!innocents.contains(damaged.getUniqueId()) && !traitors.contains(damaged.getUniqueId()) && !detective.contains(damaged.getUniqueId())) {
+                    damaged.teleport(entityDamaged.getLocation().add(0, 5, 0));
+                    damaged.setFlying(true);
+
+                    Arrow newArrow = shooter.launchProjectile(Arrow.class);
+                    newArrow.setShooter(shooter);
+                    newArrow.setVelocity(velocity);
+                    newArrow.setBounce(false);
+
+                    event.setCancelled(true);
+                    arrow.remove();
+                }
+            }
+        }
+    }
+        
 
 }

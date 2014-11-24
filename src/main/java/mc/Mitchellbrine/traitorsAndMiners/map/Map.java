@@ -27,11 +27,19 @@ public class Map {
         MapManager.maps.add(this);
     }
 
+    @Deprecated
     public Map(String name, String author, String fileName) {
         this.mapName = name;
         this.mapAuthor = author;
         mapFile = new File(TraitorsAndMiners.instance.getDataFolder(), fileName + ".zip");
-        MapManager.maps.add(this);
+    }
+    
+    public Map(String name, String author, String fileName,Location lobby, Location spawn) {
+        this.mapName = name;
+        this.mapAuthor = author;
+        mapFile = new File(TraitorsAndMiners.instance.getDataFolder(), fileName + ".zip");
+        this.lobby = lobby;
+        this.spawn = spawn;
     }
 
     public String getMapName() {
