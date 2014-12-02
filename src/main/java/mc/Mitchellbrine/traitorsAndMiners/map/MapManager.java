@@ -45,7 +45,6 @@ public class MapManager {
                 TraitorsAndMiners.map = maps.get(map).getMapName() + " by " + maps.get(map).getMapAuthor();
 
                 TraitorsAndMiners.instance.tamMap = maps.get(map);
-                System.err.println("See, it does exist!");
 
                 TraitorsAndMiners.instance.maxPlayers = maps.get(map).getMaxPlayers();
                 if (TraitorsAndMiners.instance.maxPlayers == 0) {

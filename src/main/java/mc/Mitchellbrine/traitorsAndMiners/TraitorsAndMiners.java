@@ -106,11 +106,11 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
         Bukkit.getMessenger().registerOutgoingPluginChannel(TraitorsAndMiners.instance, "BungeeCord");
         
         if (tamMap.getLobby() != null) {
-        	lobby = tamMap.getLobby();
+        	lobby = tamMap.getLobby().clone();
         }
         
         if (tamMap.getSpawn() != null) {
-        	spawn = tamMap.getSpawn();
+        	spawn = tamMap.getSpawn().clone();
         }
         
         ItemStackHelper.init();
@@ -787,7 +787,7 @@ public class TraitorsAndMiners extends JavaPlugin implements Listener {
     public void joinHandler(PlayerJoinEvent event) {
     	if (gameState == 0) {
     		if (lobby != null) {
-    		event.getPlayer().teleport(lobby);
+    				event.getPlayer().teleport(lobby);
     		} else {
     			event.getPlayer().teleport(new Location(getServer().getWorld("world"),50,65,0));
     		}
