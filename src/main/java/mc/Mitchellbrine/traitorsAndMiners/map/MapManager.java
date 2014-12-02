@@ -8,6 +8,7 @@ import java.util.Map.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * Created by Mitchellbrine on 2014.
@@ -16,7 +17,7 @@ public class MapManager {
 
     public static ArrayList<Map> maps = new ArrayList<>();
     public static HashMap<Map,Integer> votes = new HashMap<>();
-
+    public static ArrayList<UUID> voted = new ArrayList<>();
 
     public static void registerMap(Map map) {
         maps.add(map);
@@ -30,14 +31,10 @@ public class MapManager {
             File lastVote = new File(TraitorsAndMiners.instance.getDataFolder(),"mapVote.txt");
             if (lastVote.exists()) {
                 StringBuilder text = new StringBuilder();
-                Scanner scanner = new Scanner(new FileInputStream(lastVote), "UTF-8");
-                try {
-                    while (scanner.hasNextLine()){
+                try (Scanner scanner = new Scanner(new FileInputStream(lastVote), "UTF-8")) {
+                    while (scanner.hasNextLine()) {
                         text.append(scanner.nextLine());
                     }
-                }
-                finally {
-                    scanner.close();
                 }
                 map = Integer.parseInt(text.toString());
             }

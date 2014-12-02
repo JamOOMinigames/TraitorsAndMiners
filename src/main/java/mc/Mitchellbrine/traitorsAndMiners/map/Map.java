@@ -24,6 +24,8 @@ public class Map {
         this.mapName = name;
         this.mapAuthor = author;
         mapFile = new File(TraitorsAndMiners.instance.getDataFolder(), name.replaceAll(" ", "").replaceAll(",","").toLowerCase() + ".zip");
+        this.lobby = new Location(TraitorsAndMiners.instance.getServer().getWorld("world"),50,65,0);
+        this.spawn = new Location(TraitorsAndMiners.instance.getServer().getWorld("world"),0,65,0);
         MapManager.maps.add(this);
     }
 
@@ -32,6 +34,9 @@ public class Map {
         this.mapName = name;
         this.mapAuthor = author;
         mapFile = new File(TraitorsAndMiners.instance.getDataFolder(), fileName + ".zip");
+        this.lobby = new Location(TraitorsAndMiners.instance.getServer().getWorld("world"),50,65,0);
+        this.spawn = new Location(TraitorsAndMiners.instance.getServer().getWorld("world"),0,65,0);
+        MapManager.maps.add(this);
     }
     
     public Map(String name, String author, String fileName,Location lobby, Location spawn) {
@@ -40,6 +45,7 @@ public class Map {
         mapFile = new File(TraitorsAndMiners.instance.getDataFolder(), fileName + ".zip");
         this.lobby = lobby;
         this.spawn = spawn;
+        MapManager.maps.add(this);
     }
 
     public String getMapName() {

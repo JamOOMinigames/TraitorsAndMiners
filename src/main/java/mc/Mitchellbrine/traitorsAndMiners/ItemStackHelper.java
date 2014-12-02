@@ -36,7 +36,7 @@ public class ItemStackHelper {
     }
 
     public static void setInRandomSlot(Inventory inventory, ItemStack stack) {
-            inventory.setItem(TraitorsAndMiners.instance.random.nextInt(inventory.getSize()),stack);
+            inventory.setItem(TraitorsAndMiners.instance.random.nextInt(inventory.getSize() - 1),stack);
     }
 
     public static int getSlotOfMaterial(Inventory inventory, Material material) {
