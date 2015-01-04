@@ -38,8 +38,7 @@ public class TraitorWeapons implements Listener{
 	private String detectiveStore = "Detective Store";
 	private String teleportName = "Who will you teleport to?";
 	
-	public TraitorWeapons(JavaPlugin plugin) {
-		plugin.getServer().getPluginManager().registerEvents(this, plugin);
+	public TraitorWeapons() {
 	}
 
 	@EventHandler(ignoreCancelled=true)
@@ -517,7 +516,7 @@ public class TraitorWeapons implements Listener{
 		*/
 
 		ItemStack stack3 = new ItemStack(Material.BOW,6);
-		stack3.addEnchantment(Enchantment.ARROW_DAMAGE, 10);
+		stack3.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 10);
 		ItemMeta meta3 = stack3.getItemMeta();
 		meta3.setDisplayName(ChatColor.GOLD + "Last Stand");
 		List lore3 = meta3.getLore();
@@ -533,7 +532,7 @@ public class TraitorWeapons implements Listener{
 		
 		// End Item
 		ItemStack stack9 = new ItemStack(Material.EYE_OF_ENDER);
-		ItemMeta meta9 = stack.getItemMeta();
+		ItemMeta meta9 = stack9.getItemMeta();
 		meta9.setDisplayName(ChatColor.LIGHT_PURPLE + "CLOSE INVENTORY");
 		stack9.setItemMeta(meta9);
 		detectiveInv.setItem(8, stack9);
